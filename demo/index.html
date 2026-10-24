@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>phys-mini demo</title>
+    <style>
+      body { font-family: system-ui, sans-serif; background: #101418; color: #eef2f6; margin: 0; overflow: hidden; }
+      .hud { position: fixed; top: 14px; left: 16px; }
+      h1 { font-size: 18px; margin: 0; }
+      h1 span { color: #5ab0e0; }
+      p { color: #8b99a8; font-size: 13px; margin: 4px 0 0; }
+      canvas { display: block; }
+    </style>
+  </head>
+  <body>
+    <div class="hud">
+      <h1>phys<span>-mini</span></h1>
+      <p>click to drop a ball · they collide, bounce and settle</p>
+    </div>
+    <canvas id="c"></canvas>
+    <script type="module">
+      import { createWorld, body } from "../phys-mini.js"
+      const canvas = document.getElementById("c")
+      const ctx = canvas.getContext("2d")
+      const fit = () => {
+        canvas.width = innerWidth * devicePixelRatio
+        canvas.height = innerHeight * devicePixelRatio
+        canvas.style.width = innerWidth + "px"
+        canvas.style.height = innerHeight + "px"
+      }
+      fit()
+      addEventListener("resize", fit)
+
+      const world = createWorld({ gravity: 1200, bounds: { x: 0, y: 0, w: innerWidth, h: innerHeight } })
+      const colors = ["#5ab0e0", "#e0a35a", "#7fbf5a", "#d96a8f", "#9aa8ff"]
+      const spawn = (x, y) =>
+        world.add(body(x, y, 10 + Math.random() * 22, {
+          vx: (Math.random() - 0.5) * 400,
+          vy: -Math.random() * 300,
+          restitution: 0.6 + Math.random() * 0.3,
+        }))
+
+      canvas.addEventListener("pointerdown", (e) => spawn(e.clientX, e.clientY))
+      for (let i = 0; i < 12; i++) spawn(innerWidth * (0.2 + Math.random() * 0.6), 80 + i * 30)
+
+      let last = 0
+      const loop = (t) => {
+        const dt = Math.min((t - last) / 1000 || 0, 0.05)
+        last = t
+        world.step(dt)
+        ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0)
+        ctx.clearRect(0, 0, innerWidth, innerHeight)
+        world.bodies.forEach((b, i) => {
+          ctx.fillStyle = colors[i % colors.length]
+          ctx.beginPath()
+          ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2)
+          ctx.fill()
+        })
+        requestAnimationFrame(loop)
+      }
+      requestAnimationFrame(loop)
+    </script>
+  </body>
+</html>
